@@ -15,6 +15,11 @@ export function emptyLine(player: Player): PlayerBoxLine {
     tpa: 0,
     ftm: 0,
     fta: 0,
+    rebounds: 0,
+    assists: 0,
+    steals: 0,
+    blocks: 0,
+    fouls: 0,
     plusMinus: 0
   }
 }
@@ -87,6 +92,68 @@ export function recordFreeThrow(
     line.ftm += 1
     line.points += 1
   }
+}
+
+function bumpStat(
+  scene: GameScene,
+  team: TeamId,
+  playerId: string,
+  key: 'rebounds' | 'assists' | 'steals' | 'blocks' | 'fouls'
+): void {
+  const line = lineFor(scene, team, playerId)
+  if (!line) return
+  line[key] += 1
+}
+
+export function recordRebound(
+  scene: GameScene,
+  playerId: string,
+  team: TeamId
+): void {
+  bumpStat(scene, team, playerId, 'rebounds')
+}
+
+export function recordAssist(
+  scene: GameScene,
+  playerId: string,
+  team: TeamId
+): void {
+  bumpStat(scene, team, playerId, 'assists')
+}
+
+/** Credit an assist when a teammate's pass set up this made FG. */
+export function maybeRecordAssist(
+  scene: GameScene,
+  shooterId: string,
+  team: TeamId
+): void {
+  const passerId = scene.lastPasserId
+  if (!passerId || passerId === shooterId) return
+  recordAssist(scene, passerId, team)
+}
+
+export function recordSteal(
+  scene: GameScene,
+  playerId: string,
+  team: TeamId
+): void {
+  bumpStat(scene, team, playerId, 'steals')
+}
+
+export function recordBlock(
+  scene: GameScene,
+  playerId: string,
+  team: TeamId
+): void {
+  bumpStat(scene, team, playerId, 'blocks')
+}
+
+export function recordPersonalFoul(
+  scene: GameScene,
+  playerId: string,
+  team: TeamId
+): void {
+  bumpStat(scene, team, playerId, 'fouls')
 }
 
 export function resultFromScene(

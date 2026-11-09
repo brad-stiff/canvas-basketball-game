@@ -17,6 +17,7 @@ type Props = {
   season: Season
   saveNote: string | null
   onOpenLineup: () => void
+  onOpenRosters: () => void
   onWatchNext: () => void
   onSimNext: () => void
   onViewBox: (result: GameResult) => void
@@ -29,6 +30,7 @@ export default function HubScreen({
   season,
   saveNote,
   onOpenLineup,
+  onOpenRosters,
   onWatchNext,
   onSimNext,
   onViewBox,
@@ -81,9 +83,14 @@ export default function HubScreen({
             <h2>Starting lineup</h2>
             <p className="mgmt-muted">Starter overall ~{starterOvr}</p>
           </div>
-          <button type="button" className="btn" onClick={onOpenLineup}>
-            Edit lineup
-          </button>
+          <div className="btn-row" style={{ marginTop: 0 }}>
+            <button type="button" className="btn" onClick={onOpenLineup}>
+              Edit lineup
+            </button>
+            <button type="button" className="btn" onClick={onOpenRosters}>
+              Team rosters
+            </button>
+          </div>
         </div>
         <StarterStrip team={user} />
       </section>

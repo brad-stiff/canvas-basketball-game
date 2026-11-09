@@ -2,9 +2,9 @@ import type { GameScene } from '../types'
 import { clearUserLineupHold, tryCoachSubs } from './coach'
 import { showCallout } from './turnover'
 
-/** Shortened quarters so a full AI game is watchable without speed controls. */
-export const QUARTER_LENGTH = 120
-export const OVERTIME_LENGTH = 60
+/** Shortened quarters so a full AI game is watchable (3:00 × 4 = 12 min). */
+export const QUARTER_LENGTH = 180
+export const OVERTIME_LENGTH = 90
 export const BREAK_LENGTH = 4
 export const HALFTIME_LENGTH = 7
 export const BONUS_THRESHOLD = 5

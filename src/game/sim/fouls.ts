@@ -1,4 +1,5 @@
 import { distance, getPossessor } from '../entities'
+import { recordPersonalFoul } from '../season/boxScore'
 import type { GameScene, Player } from '../types'
 import { BONUS_THRESHOLD } from './clock'
 import { beginFreeThrows } from './freethrows'
@@ -17,8 +18,12 @@ export function matchingDefender(
   return defense[idx]
 }
 
-export function recordTeamFoul(scene: GameScene, foulingTeam: 'home' | 'away'): void {
-  scene.teamFouls[foulingTeam] += 1
+export function recordTeamFoul(
+  scene: GameScene,
+  fouler: Player
+): void {
+  scene.teamFouls[fouler.team] += 1
+  recordPersonalFoul(scene, fouler.id, fouler.team)
 }
 
 export function defenseInBonus(scene: GameScene): boolean {
@@ -35,7 +40,7 @@ export function tryReachInFoul(scene: GameScene, defender: Player): boolean {
   const handler = getPossessor(scene)
   if (!handler) return false
 
-  recordTeamFoul(scene, defender.team)
+  recordTeamFoul(scene, defender)
 
   if (defenseInBonus(scene)) {
     showCallout(scene, 'FOUL — BONUS')
@@ -74,6 +79,27 @@ export function rollShootingFoul(
     0.04
   if (Math.random() > chance) return false
 
-  recordTeamFoul(scene, defender.team)
+  recordTeamFoul(scene, defender)
   return true
+}
+
+/**
+ * Contested-shot block chance. Foul takes precedence when both are rolled
+ * at release — caller should skip this when a shooting foul was whistled.
+ */
+export function rollBlock(
+  scene: GameScene,
+  shooter: Player
+): Player | null {
+  const defender = matchingDefender(scene, shooter)
+  if (!defender) return null
+
+  const gap = distance(defender.position, shooter.position)
+  if (gap > 2.6) return null
+
+  const pressure = Math.max(0, 1 - gap / 2.6)
+  const chance =
+    0.1 * (effectiveRating(defender, defender.defense) / 100) * pressure
+  if (Math.random() > chance) return null
+  return defender
 }

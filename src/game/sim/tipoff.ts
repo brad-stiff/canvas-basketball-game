@@ -1,7 +1,8 @@
 import {
   assignTeamTargets,
   attackSideFor,
-  createHeldBall
+  createHeldBall,
+  resetPossessionPassing
 } from '../entities'
 import type { GameScene, TeamId } from '../types'
 import { deadBallDelay, resetPeriodClock } from './clock'
@@ -20,7 +21,7 @@ export function resolveTipOff(scene: GameScene): void {
   scene.attackSide = attackSideFor(winner)
   scene.nextPeriodPossession = winner === 'home' ? 'away' : 'home'
   scene.ball = createHeldBall(ballHandler)
-  scene.passesThisPossession = 0
+  resetPossessionPassing(scene)
   scene.shotClock = 24
   scene.shotClockRunning = false
   resetPeriodClock(scene, scene.quarter > 4)

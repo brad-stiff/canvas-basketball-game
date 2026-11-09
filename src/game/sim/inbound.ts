@@ -3,7 +3,8 @@ import {
   assignTeamTargets,
   attackSideFor,
   createHeldBall,
-  otherTeam
+  otherTeam,
+  resetPossessionPassing
 } from '../entities'
 import type { GameScene, TeamId } from '../types'
 import { tryCoachSubs } from './coach'
@@ -38,7 +39,7 @@ export function beginInbound(scene: GameScene): void {
   inbounder.target = { ...inbounder.position }
 
   scene.ball = createHeldBall(inbounder)
-  scene.passesThisPossession = 0
+  resetPossessionPassing(scene)
   scene.shotClock = 24
   scene.shotClockRunning = false
   scene.gameClockRunning = false

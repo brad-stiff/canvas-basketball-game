@@ -1,16 +1,22 @@
 import type { GameScene, Player } from '../types'
 
-/** Base energy lost per second of live game clock while on the floor. */
-const ON_COURT_DRAIN = 0.35
+/**
+ * Base energy lost per second of live game clock while on the floor.
+ * Tuned so a mid-stamina starter hits coach rest (~48 energy) mid/late Q2.
+ */
+const ON_COURT_DRAIN = 0.28
 /** Bench recovery per real-time second. */
 const BENCH_RECOVER = 0.55
 /** Mild recovery for everyone during period breaks. */
 const BREAK_RECOVER = 0.3
 
-/** Higher stamina → slower drain (and slightly faster recovery). */
+/**
+ * Higher stamina → slower drain (and slightly faster recovery).
+ * Flattened so elite Sta stretches stints, not ironman nights (~0.55–1.05).
+ */
 function staminaFactor(stamina: number): number {
   const s = Math.min(100, Math.max(0, stamina))
-  return 1.25 - s / 100
+  return 1.05 - s / 200
 }
 
 function recoverFactor(stamina: number): number {

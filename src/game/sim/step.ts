@@ -2,7 +2,8 @@ import {
   assignTeamTargets,
   attackSideFor,
   createHeldBall,
-  otherTeam
+  otherTeam,
+  resetPossessionPassing
 } from '../entities'
 import type { GameScene, TeamId } from '../types'
 import { stepBallFlight } from './ballFlight'
@@ -58,7 +59,7 @@ function startPeriodPossession(scene: GameScene, team: TeamId): void {
     scene.ball = createHeldBall(handler)
   }
 
-  scene.passesThisPossession = 0
+  resetPossessionPassing(scene)
   scene.shotClock = 24
   scene.shotClockRunning = false
   assignTeamTargets(scene)

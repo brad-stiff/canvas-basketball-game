@@ -14,8 +14,9 @@ import CourtCanvas from './components/CourtCanvas'
 import { clearCareer, loadCareer, writeCareer } from './save/career'
 import HubScreen from './screens/HubScreen'
 import LineupScreen from './screens/LineupScreen'
+import RostersScreen from './screens/RostersScreen'
 
-type Screen = 'hub' | 'lineup' | 'watch'
+type Screen = 'hub' | 'lineup' | 'rosters' | 'watch'
 
 function createBootState(): { league: League; season: Season } {
   const league = createDefaultLeague()
@@ -163,6 +164,14 @@ export default function App() {
     )
   }
 
+  if (screen === 'rosters') {
+    return (
+      <main className="app app-scroll">
+        <RostersScreen league={league} onBack={() => setScreen('hub')} />
+      </main>
+    )
+  }
+
   return (
     <main className="app app-scroll">
       <HubScreen
@@ -170,6 +179,7 @@ export default function App() {
         season={season}
         saveNote={saveNote}
         onOpenLineup={() => setScreen('lineup')}
+        onOpenRosters={() => setScreen('rosters')}
         onWatchNext={() => setScreen('watch')}
         onSimNext={handleSimNext}
         onViewBox={setBoxResult}

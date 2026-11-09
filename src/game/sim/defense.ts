@@ -4,6 +4,7 @@ import {
   getPossessor,
   opponents
 } from '../entities'
+import { recordSteal } from '../season/boxScore'
 import type { GameScene, Player, Vec2 } from '../types'
 import { matchingDefender, tryReachInFoul } from './fouls'
 import { effectiveRating } from './stamina'
@@ -128,7 +129,7 @@ export function trySteal(scene: GameScene, dt: number): void {
 
   const pressure = Math.max(0, 1 - gap / 2.8)
   const rate =
-    0.22 *
+    0.15 *
     (effectiveRating(defender, defender.defense) / 100) *
     pressure *
     (1 - effectiveRating(handler, handler.speed) / 160)
@@ -139,6 +140,7 @@ export function trySteal(scene: GameScene, dt: number): void {
     return
   }
 
+  recordSteal(scene, defender.id, defender.team)
   turnoverToPlayer(scene, defender, 'STEAL')
 }
 
@@ -199,12 +201,13 @@ export function tryPassDeflection(scene: GameScene, dt: number): void {
     if (toBall > 3.2 && toLane > 2.2) continue
 
     const rate =
-      0.55 *
+      0.38 *
       (effectiveRating(defender, defender.defense) / 100) *
       (toBall < 2.5 ? 1 : 0.45)
     if (Math.random() < rate * dt) {
       if (Math.random() < 0.55) {
-        turnoverToPlayer(scene, defender, 'DEFLECTION')
+        recordSteal(scene, defender.id, defender.team)
+        turnoverToPlayer(scene, defender, 'STEAL')
       } else {
         scene.ball = {
           state: 'loose',
@@ -223,7 +226,11 @@ export function tryPassDeflection(scene: GameScene, dt: number): void {
           },
           shootingFoul: false,
           shooterId: null,
-          passReceiverId: null
+          passReceiverId: null,
+          passerId: null,
+          blockerId: null,
+          reboundEligible: false,
+          stealCreditId: defender.id
         }
         scene.callout = 'DEFLECTION'
         scene.calloutTimer = 1.0

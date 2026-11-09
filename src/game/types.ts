@@ -1,4 +1,12 @@
 import type { TeamRoster } from './roster/types'
+import type { UserCoaching } from './sim/coachingTypes'
+
+export type { UserCoaching }
+export type {
+  DefensiveScheme,
+  OffensivePlayId,
+  ScreenDefense
+} from './sim/coachingTypes'
 
 export type Vec2 = { x: number; y: number }
 
@@ -47,6 +55,17 @@ export type Ball = {
   shooterId: string | null
   /** Intended pass target while ball is in flight */
   passReceiverId: string | null
+  /** Who threw the pass currently in flight */
+  passerId: string | null
+  /** Defender who blocked this shot attempt */
+  blockerId: string | null
+  /** Loose ball came from a missed shot (eligible for a rebound) */
+  reboundEligible: boolean
+  /**
+   * If set, credit this defender a steal when the defense gains possession
+   * off this loose ball (pass deflection).
+   */
+  stealCreditId: string | null
 }
 
 export type GamePhase =
@@ -81,6 +100,11 @@ export type PlayerBoxLine = {
   tpa: number
   ftm: number
   fta: number
+  rebounds: number
+  assists: number
+  steals: number
+  blocks: number
+  fouls: number
   plusMinus: number
 }
 
@@ -103,6 +127,8 @@ export type GameScene = {
   phase: GamePhase
   timer: number
   passesThisPossession: number
+  /** Last completed pass this possession (for assists); null if none */
+  lastPasserId: string | null
   shotClock: number
   shotClockRunning: boolean
   callout: string | null
@@ -134,4 +160,6 @@ export type GameScene = {
   userManagedTeam: TeamId | null
   /** Game-clock seconds remaining before AI may undo user timeout swaps */
   userLineupHoldSeconds: number
+  /** Human coaching dials (UI now; sim hookup later) */
+  userCoaching: UserCoaching
 }

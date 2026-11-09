@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
+  attackSideFor,
   createInitialScene,
   substitutePlayer,
   type MatchupLineups
@@ -8,6 +9,10 @@ import { paintScene } from '@game/drawScene'
 import type { RosterPlayer } from '@game/roster/types'
 import { resultFromScene } from '@game/season/boxScore'
 import type { GameResult, PlayerBoxLine } from '@game/season/types'
+import {
+  createDefaultUserCoaching,
+  type UserCoaching
+} from '@game/sim/coachingTypes'
 import { startGameLoop, type LoopControls } from '@game/sim/loop'
 import { stepScene } from '@game/sim/step'
 import { setUserLineupHold, tryCoachSubs } from '@game/sim/coach'
@@ -20,6 +25,8 @@ import type { GameScene, Player, TeamId } from '@game/types'
 import { otherTeam } from '@game/entities'
 import { showCallout } from '@game/sim/turnover'
 import BoxScoreTable from './BoxScoreTable'
+import DefenseCoachPanel from './DefenseCoachPanel'
+import OffenseCoachPanel from './OffenseCoachPanel'
 import TimeoutOverlay from './TimeoutOverlay'
 
 type Props = {
@@ -40,6 +47,7 @@ type LiveSnap = {
   userSide: TeamId
   onCourt: Player[]
   benchEnergy: Record<string, number>
+  userCoaching: UserCoaching
 }
 
 function onCourtLines(
@@ -55,6 +63,20 @@ function onCourtLines(
 }
 
 function snapshotScene(scene: GameScene, userSide: TeamId): LiveSnap {
+  const onCourt = scene.players
+    .filter((p) => p.team === userSide)
+    .map((p) => ({
+      ...p,
+      position: { ...p.position },
+      target: { ...p.target }
+    }))
+  const onCourtIds = new Set(onCourt.map((p) => p.id))
+  if (
+    scene.userCoaching.attackPlayerId != null &&
+    !onCourtIds.has(scene.userCoaching.attackPlayerId)
+  ) {
+    scene.userCoaching.attackPlayerId = null
+  }
   return {
     home: onCourtLines(scene, 'home'),
     away: onCourtLines(scene, 'away'),
@@ -62,14 +84,12 @@ function snapshotScene(scene: GameScene, userSide: TeamId): LiveSnap {
     awayName: scene.teamNames.away,
     timeoutsLeft: { ...scene.timeoutsLeft },
     userSide,
-    onCourt: scene.players
-      .filter((p) => p.team === userSide)
-      .map((p) => ({
-        ...p,
-        position: { ...p.position },
-        target: { ...p.target }
-      })),
-    benchEnergy: { ...scene.benchEnergy }
+    onCourt,
+    benchEnergy: { ...scene.benchEnergy },
+    userCoaching: {
+      ...scene.userCoaching,
+      playQueue: [...scene.userCoaching.playQueue]
+    }
   }
 }
 
@@ -211,7 +231,41 @@ export default function CourtCanvas({
     setLive(snapshotScene(scene, userSide))
   }
 
+  const handleCoachingChange = (next: UserCoaching): void => {
+    const scene = sceneRef.current
+    if (!scene) return
+    scene.userCoaching = {
+      ...next,
+      playQueue: [...next.playQueue]
+    }
+    setLive(snapshotScene(scene, userSide))
+  }
+
   const timeoutsLeft = live?.timeoutsLeft[userSide] ?? 2
+  const coaching = live?.userCoaching ?? createDefaultUserCoaching()
+  /** Fixed for the game: offense rail by your basket, defense by theirs. */
+  const userAttackSide = attackSideFor(userSide)
+  const attackOptions = (live?.onCourt ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    number: p.number
+  }))
+
+  const offensePanel = (
+    <OffenseCoachPanel
+      coaching={coaching}
+      onCourt={attackOptions}
+      active
+      onChange={handleCoachingChange}
+    />
+  )
+  const defensePanel = (
+    <DefenseCoachPanel
+      coaching={coaching}
+      active
+      onChange={handleCoachingChange}
+    />
+  )
 
   return (
     <div className="watch-shell">
@@ -254,24 +308,32 @@ export default function CourtCanvas({
       </div>
       <div className="watch-body">
         <div className="watch-court">
-          <canvas
-            ref={canvasRef}
-            className="court-canvas"
-            aria-label="Basketball court"
-          />
-          {paused && !inTimeout && (
-            <div className="watch-paused">Paused</div>
-          )}
-          {inTimeout && live && (
-            <TimeoutOverlay
-              team={userRoster}
-              onCourt={live.onCourt}
-              benchEnergy={live.benchEnergy}
-              timeoutsLeft={live.timeoutsLeft[userSide]}
-              onSwap={handleSwap}
-              onResume={handleResume}
+          <aside className="watch-coach-rail is-left" aria-label="Left coaching rail">
+            {userAttackSide === 'left' ? offensePanel : defensePanel}
+          </aside>
+          <div className="watch-court-stage">
+            <canvas
+              ref={canvasRef}
+              className="court-canvas"
+              aria-label="Basketball court"
             />
-          )}
+            {paused && !inTimeout && (
+              <div className="watch-paused">Paused</div>
+            )}
+            {inTimeout && live && (
+              <TimeoutOverlay
+                team={userRoster}
+                onCourt={live.onCourt}
+                benchEnergy={live.benchEnergy}
+                timeoutsLeft={live.timeoutsLeft[userSide]}
+                onSwap={handleSwap}
+                onResume={handleResume}
+              />
+            )}
+          </div>
+          <aside className="watch-coach-rail is-right" aria-label="Right coaching rail">
+            {userAttackSide === 'right' ? offensePanel : defensePanel}
+          </aside>
         </div>
         <div className="watch-boxes">
           <aside className="watch-box" aria-label="Home box score">

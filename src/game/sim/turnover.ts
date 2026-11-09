@@ -2,7 +2,8 @@ import {
   assignTeamTargets,
   attackSideFor,
   createHeldBall,
-  otherTeam
+  otherTeam,
+  resetPossessionPassing
 } from '../entities'
 import type { GameScene, Player, TeamId } from '../types'
 
@@ -20,7 +21,7 @@ export function turnoverToPlayer(
   scene.possessionTeam = player.team
   scene.attackSide = attackSideFor(player.team)
   scene.ball = createHeldBall(player)
-  scene.passesThisPossession = 0
+  resetPossessionPassing(scene)
   scene.phase = 'live'
   scene.timer = 0.55
   scene.shotClock = 24

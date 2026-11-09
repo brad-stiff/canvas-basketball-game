@@ -32,6 +32,11 @@ export default function BoxScoreTable({
             <th>Name</th>
             <th>MIN</th>
             <th>PTS</th>
+            <th>REB</th>
+            <th>AST</th>
+            <th>STL</th>
+            <th>BLK</th>
+            <th>PF</th>
             <th>FG</th>
             <th>3PT</th>
             <th>FT</th>
@@ -45,6 +50,11 @@ export default function BoxScoreTable({
               <td className="name-cell">{l.name}</td>
               <td>{formatMinutes(l.minutes ?? 0)}</td>
               <td>{l.points}</td>
+              <td>{l.rebounds ?? 0}</td>
+              <td>{l.assists ?? 0}</td>
+              <td>{l.steals ?? 0}</td>
+              <td>{l.blocks ?? 0}</td>
+              <td>{l.fouls ?? 0}</td>
               <td>
                 {l.fgm}-{l.fga}
               </td>

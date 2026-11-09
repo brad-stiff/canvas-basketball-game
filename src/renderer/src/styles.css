@@ -89,6 +89,147 @@ body {
   flex: 1;
   min-width: 0;
   min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(180px, 220px) 1fr minmax(180px, 220px);
+  grid-template-rows: 1fr;
+  min-height: 0;
+}
+
+.watch-court-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+.watch-coach-rail {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  background: rgba(8, 12, 8, 0.92);
+  border-color: rgba(232, 237, 228, 0.12);
+  border-style: solid;
+  border-width: 0;
+  padding: 0.55rem 0.65rem 0.7rem;
+}
+
+.watch-coach-rail.is-left {
+  border-right-width: 1px;
+}
+
+.watch-coach-rail.is-right {
+  border-left-width: 1px;
+}
+
+.coach-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  transition: opacity 0.15s ease;
+}
+
+.coach-panel.is-dimmed {
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.coach-kicker {
+  margin: 0;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #f0c14a;
+}
+
+.coach-title {
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+}
+
+.coach-muted {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #a8b59a;
+  list-style: none;
+}
+
+.coach-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: #a8b59a;
+}
+
+.coach-select {
+  width: 100%;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #e8ede4;
+  background: #1a2118;
+  border: 1px solid rgba(232, 237, 228, 0.22);
+  padding: 0.35rem 0.45rem;
+}
+
+.coach-queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.coach-queue-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.coach-queue-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coach-queue-actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.2rem;
+}
+
+.coach-mini-btn {
+  padding: 0.15rem 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+}
+
+.coach-mini-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.coach-toggle-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.coach-toggle-btn {
+  padding: 0.35rem 0.55rem;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.coach-toggle-btn.is-active {
+  background: #3d6b3a;
+  border-color: #4f874b;
+}
+
+.coach-toggle-btn:disabled {
+  cursor: default;
 }
 
 .watch-boxes {
@@ -218,6 +359,21 @@ body {
 }
 
 @media (max-width: 900px) {
+  .watch-court {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  .watch-coach-rail.is-left {
+    border-right-width: 0;
+    border-bottom-width: 1px;
+  }
+
+  .watch-coach-rail.is-right {
+    border-left-width: 0;
+    border-top-width: 1px;
+  }
+
   .watch-boxes {
     grid-template-columns: 1fr;
     max-height: min(42vh, 360px);
@@ -418,6 +574,18 @@ body {
 
 .roster-table tbody tr:hover {
   background: rgba(232, 237, 228, 0.06);
+}
+
+.roster-table-static tbody tr {
+  cursor: default;
+}
+
+.roster-table-static tbody tr:hover {
+  background: transparent;
+}
+
+.team-picker {
+  margin-top: 0;
 }
 
 .roster-table tr.is-selected {

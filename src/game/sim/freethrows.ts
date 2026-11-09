@@ -95,7 +95,11 @@ export function launchFreeThrow(scene: GameScene): void {
     velocity: { x: 0, y: 0 },
     shootingFoul: false,
     shooterId: shooter.id,
-    passReceiverId: null
+    passReceiverId: null,
+    passerId: null,
+    blockerId: null,
+    reboundEligible: false,
+    stealCreditId: null
   }
   scene.timer = 0
 }
@@ -144,7 +148,11 @@ function onFreeThrowArrive(scene: GameScene): void {
       },
       shootingFoul: false,
       shooterId: null,
-      passReceiverId: null
+      passReceiverId: null,
+      passerId: null,
+      blockerId: null,
+      reboundEligible: true,
+      stealCreditId: null
     }
     scene.gameClockRunning = true
     return

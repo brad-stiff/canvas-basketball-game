@@ -6,12 +6,20 @@ import {
   distance,
   getPlayer,
   getPossessor,
-  heldBallOffset
+  heldBallOffset,
+  resetPossessionPassing
 } from '../entities'
 import type { GameScene, Player, Vec2 } from '../types'
-import { rollShootingFoul } from './fouls'
+import { rollBlock, rollShootingFoul } from './fouls'
 import { resolveShootingFoulTrip } from './freethrows'
-import { applyPlusMinus, recordFieldGoalAttempt } from '../season/boxScore'
+import {
+  applyPlusMinus,
+  maybeRecordAssist,
+  recordBlock,
+  recordFieldGoalAttempt,
+  recordRebound,
+  recordSteal
+} from '../season/boxScore'
 import { deadBallDelay } from './clock'
 import {
   FULL_SHOT_CLOCK,
@@ -73,7 +81,11 @@ export function startPass(scene: GameScene, from: Player, to: Player): void {
     velocity: { x: 0, y: 0 },
     shootingFoul: false,
     shooterId: null,
-    passReceiverId: to.id
+    passReceiverId: to.id,
+    passerId: from.id,
+    blockerId: null,
+    reboundEligible: false,
+    stealCreditId: null
   }
 }
 
@@ -81,12 +93,20 @@ export function startShot(scene: GameScene, shooter: Player): void {
   const start = heldBallOffset(shooter)
   const rim = basketPosition(scene.attackSide)
   const { chance, isThree, dist } = evaluateShot(scene, shooter)
-  const makes = rollShotMake(chance)
+  let makes = rollShotMake(chance)
   const foul = rollShootingFoul(scene, shooter)
   freezeShotClock(scene)
 
+  let blockerId: string | null = null
   if (foul) {
     showCallout(scene, 'SHOOTING FOUL', 0.9)
+  } else {
+    const blocker = rollBlock(scene, shooter)
+    if (blocker) {
+      makes = false
+      blockerId = blocker.id
+      showCallout(scene, 'BLOCK', 0.9)
+    }
   }
 
   scene.ball = {
@@ -103,7 +123,11 @@ export function startShot(scene: GameScene, shooter: Player): void {
     velocity: { x: 0, y: 0 },
     shootingFoul: foul,
     shooterId: shooter.id,
-    passReceiverId: null
+    passReceiverId: null,
+    passerId: null,
+    blockerId,
+    reboundEligible: false,
+    stealCreditId: null
   }
 }
 
@@ -127,7 +151,11 @@ function beginLooseBall(scene: GameScene, at: Vec2): void {
     },
     shootingFoul: false,
     shooterId: null,
-    passReceiverId: null
+    passReceiverId: null,
+    passerId: null,
+    blockerId: null,
+    reboundEligible: true,
+    stealCreditId: null
   }
 }
 
@@ -146,11 +174,19 @@ function onShotArrive(scene: GameScene): void {
     )
   }
 
+  if (ball.blockerId) {
+    const blocker = getPlayer(scene, ball.blockerId)
+    if (blocker) {
+      recordBlock(scene, blocker.id, blocker.team)
+    }
+  }
+
   if (ball.shootingFoul && shooter) {
     if (ball.shotMakes) {
       const points = ball.shotIsThree ? 3 : 2
       scene.score[team] += points
       applyPlusMinus(scene, team, points)
+      if (ball.shooterId) maybeRecordAssist(scene, ball.shooterId, team)
     }
     resolveShootingFoulTrip(
       scene,
@@ -165,6 +201,7 @@ function onShotArrive(scene: GameScene): void {
     const points = ball.shotIsThree ? 3 : 2
     scene.score[team] += points
     applyPlusMinus(scene, team, points)
+    if (ball.shooterId) maybeRecordAssist(scene, ball.shooterId, team)
     scene.phase = 'made'
     scene.timer = deadBallDelay(scene, 1.1)
     scene.shotClockRunning = false
@@ -200,6 +237,12 @@ function stepLooseBall(scene: GameScene, dt: number): void {
     Math.abs(ball.position.x) > halfL ||
     Math.abs(ball.position.y) > halfW
   ) {
+    if (ball.stealCreditId) {
+      const stealer = getPlayer(scene, ball.stealCreditId)
+      if (stealer && stealer.team === defensiveTeam(scene)) {
+        recordSteal(scene, stealer.id, stealer.team)
+      }
+    }
     turnoverToTeam(scene, defensiveTeam(scene), 'OUT OF BOUNDS')
     return
   }
@@ -220,10 +263,12 @@ function stepLooseBall(scene: GameScene, dt: number): void {
   if (!contender) return
 
   const wasOffense = contender.team === scene.possessionTeam
+  const countRebound = ball.reboundEligible
+  const stealCreditId = ball.stealCreditId
   scene.ball = createHeldBall(contender)
   scene.possessionTeam = contender.team
   scene.attackSide = attackSideFor(contender.team)
-  scene.passesThisPossession = 0
+  resetPossessionPassing(scene)
   resetShotClock(
     scene,
     wasOffense ? OFFENSIVE_REBOUND_SHOT_CLOCK : FULL_SHOT_CLOCK
@@ -232,8 +277,19 @@ function stepLooseBall(scene: GameScene, dt: number): void {
   scene.phase = 'live'
   scene.timer = wasOffense ? 0.35 : 0.55
   scene.gameClockRunning = true
-  if (!wasOffense) {
-    showCallout(scene, 'DEFENSIVE REBOUND', 0.9)
+  if (!wasOffense && stealCreditId) {
+    const stealer = getPlayer(scene, stealCreditId)
+    if (stealer && stealer.team === contender.team) {
+      recordSteal(scene, stealer.id, stealer.team)
+    }
+  }
+  if (countRebound) {
+    recordRebound(scene, contender.id, contender.team)
+    showCallout(
+      scene,
+      wasOffense ? 'OFFENSIVE REBOUND' : 'DEFENSIVE REBOUND',
+      0.9
+    )
   }
 }
 
@@ -285,6 +341,9 @@ export function stepBallFlight(scene: GameScene, dt: number): void {
       catcher = best
     }
     if (catcher) {
+      if (ball.passerId && ball.passerId !== catcher.id) {
+        scene.lastPasserId = ball.passerId
+      }
       scene.ball = createHeldBall(catcher)
       scene.timer = 0.3 + Math.random() * 0.4
     }

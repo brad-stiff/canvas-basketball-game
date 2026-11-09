@@ -3,6 +3,8 @@ import { startersOf } from './roster/generate'
 import type { RosterPlayer, TeamRoster } from './roster/types'
 import { ensureBoxLine, initBoxScore } from './season/boxScore'
 import { assignRoleSpacing } from './sim/spacing'
+import { QUARTER_LENGTH } from './sim/clock'
+import { createDefaultUserCoaching } from './sim/coachingTypes'
 import { getBenchEnergy, setBenchEnergy } from './sim/stamina'
 import type { Ball, GameScene, Player, TeamId, Vec2 } from './types'
 
@@ -151,8 +153,18 @@ export function createHeldBall(owner: Player): Ball {
     velocity: { x: 0, y: 0 },
     shootingFoul: false,
     shooterId: null,
-    passReceiverId: null
+    passReceiverId: null,
+    passerId: null,
+    blockerId: null,
+    reboundEligible: false,
+    stealCreditId: null
   }
+}
+
+/** Clear pass-chain state when possession changes. */
+export function resetPossessionPassing(scene: GameScene): void {
+  scene.passesThisPossession = 0
+  scene.lastPasserId = null
 }
 
 /** Align offense spots; seed defense between each man and the hoop. */
@@ -219,12 +231,13 @@ export function createInitialScene(
     phase: 'tipoff',
     timer: fastSim ? 0.05 : 1.6,
     passesThisPossession: 0,
+    lastPasserId: null,
     shotClock: 24,
     shotClockRunning: false,
     callout: 'JUMP BALL',
     calloutTimer: fastSim ? 0.05 : 1.6,
     quarter: 1,
-    gameClock: 120,
+    gameClock: QUARTER_LENGTH,
     gameClockRunning: false,
     teamFouls: { home: 0, away: 0 },
     freeThrows: null,
@@ -239,7 +252,8 @@ export function createInitialScene(
     rosters: { home: matchup.home, away: matchup.away },
     benchEnergy,
     userManagedTeam: options?.userManagedTeam ?? null,
-    userLineupHoldSeconds: 0
+    userLineupHoldSeconds: 0,
+    userCoaching: createDefaultUserCoaching()
   }
   scene.boxScore = initBoxScore(scene)
   return scene
@@ -321,7 +335,7 @@ export function givePossession(scene: GameScene, player: Player): void {
   scene.possessionTeam = player.team
   scene.attackSide = attackSideFor(player.team)
   scene.ball = createHeldBall(player)
-  scene.passesThisPossession = 0
+  resetPossessionPassing(scene)
   scene.shotClock = 24
   scene.shotClockRunning = true
   assignTeamTargets(scene)
